@@ -438,9 +438,10 @@ img {
 	position: absolute;
     width:100%;
     height:100%;
-	background-image:url(images/logo.jpg);
+	background-image:url(images/472713882_122133885638496668_2194305492471167213_n.jpg);
 	background-repeat: no-repeat;
 	background-position: center;
+    background-size: 50%;
 }
 
 .preloader-svg {
