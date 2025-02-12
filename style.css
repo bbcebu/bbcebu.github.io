@@ -15787,7 +15787,8 @@ body {
 .team-logo {
     width: 70px;
     height: 70px;
-    object-fit: contain;
+    /* object-fit: contain; */
+    object-fit: fill;
     background: white;
     border-radius: 50%;
     border:8px solid;
