@@ -116,50 +116,51 @@ console.error("Error fetching game scores:", error);
 }
 
 
-    async function fetchStandings() {
-        try {
-            let response = await fetch(standingsUrl);
-            let data = await response.json();
-            let values = data.values;
-            let container = document.getElementById("standingsContainer");
+async function fetchStandings() {
+    try {
+        let response = await fetch(standingsUrl);
+        let data = await response.json();
+        let values = data.values;
+        let container = document.getElementById("standingsContainer");
 
-            container.innerHTML = ""; // Clear old standings before updating
+        container.innerHTML = ""; // Clear old standings
 
-            let standingsTable = `
-                <table class="standings-table">
-                    <tr>
-                        <th>Rank</th>
-                        <th width="100"></th>
-                        <th>Team</th>
-                        <th>W</th>
-                        <th>L</th>
-                    </tr>
+        // Remove header row and sort by rank (assuming rank is in column 0)
+        let rows = values.slice(1).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+
+        let standingsTable = `
+            <table class="standings-table">
+                <tr>
+                    <th>Rank</th>
+                    <th width="100"></th>
+                    <th>Team</th>
+                    <th>W</th>
+                    <th>L</th>
+                </tr>
+        `;
+
+        for (let i = 0; i < rows.length; i++) {
+            let [rank, team, wins, losses, logo] = rows[i];
+            logo = logo || "/images/472713882_122133885638496668_2194305492471167213_n.jpg";
+
+            standingsTable += `
+                <tr>
+                    <td>${rank}</td>
+                    <td style="min-width:50px"><img class="standings-logo" src="${logo}" alt="${team} Logo"></td>
+                    <td>${team}</td>
+                    <td>${wins}</td>
+                    <td>${losses}</td>
+                </tr>
             `;
-
-            for (let i = 1; i < values.length; i++) {
-                let rank = values[i][0];
-                let team = values[i][1];
-                let wins = values[i][2];
-                let losses = values[i][3];
-                let logo = values[i][4] ? values[i][4] : "/images/472713882_122133885638496668_2194305492471167213_n.jpg";
-
-                standingsTable += `
-                    <tr>
-                        <td>${rank}</td>
-                        <td style="min-width:50px"><img class="standings-logo" src="${logo}" alt="${team} Logo"></td>
-                        <td>${team}</td>
-                        <td>${wins}</td>
-                        <td>${losses}</td>
-                    </tr>
-                `;
-            }
-
-            standingsTable += `</table>`;
-            container.innerHTML = standingsTable;
-        } catch (error) {
-            console.error("Error fetching standings:", error);
         }
+
+        standingsTable += `</table>`;
+        container.innerHTML = standingsTable;
+    } catch (error) {
+        console.error("Error fetching standings:", error);
     }
+}
+
 
     fetchScores(); // Fetch game scores on page load
     fetchStandings(); // Fetch standings on page load
