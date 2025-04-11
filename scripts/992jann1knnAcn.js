@@ -96,12 +96,13 @@ let gameCard = `
 
 // **Step 3: Sort all games by date (latest to oldest), with later rows appearing first for the same date**
 games.sort((a, b) => {
-    let dateDiff = b.date - a.date; // Sort by date (latest first)
+    let dateDiff = b.date - a.date; // Newest date first
     if (dateDiff === 0) {
-        return b.index - a.index; // Later row in the sheet appears first
+        return a.index - b.index; // Earlier row appears first for same date
     }
     return dateDiff;
 });
+
 
 // **Step 4: Display grouped games**
 let lastGameType = "";
