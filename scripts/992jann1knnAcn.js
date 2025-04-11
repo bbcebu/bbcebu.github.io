@@ -57,25 +57,38 @@ for (let i = 1; i < values.length; i++) {
     let logo1 = teamLogos[team1] || "/images/472713882_122133885638496668_2194305492471167213_n.jpg";
     let logo2 = teamLogos[team2] || "/images/472713882_122133885638496668_2194305492471167213_n.jpg";
 
-    let gameCard = `
-        <div class="game-card mb-5">
-            <div class="teams row">
-                <div class="team col-5">
-                    <img style="border-color:#434343" class="team-logo" src="${logo1}" alt="${team1} Logo">
-                    <p class="team-name">${team1}</p>
-                </div>
-                <span class="vs col-2">VS</span>
-                <div class="team col-5">
-                    <img style="border-color:#434343" class="team-logo" src="${logo2}" alt="${team2} Logo">
-                    <p class="team-name">${team2}</p>
-                </div>
-            </div>
-            <div class="scores">${score1} - ${score2}</div>
-            <div class="best-player">Best Player: 
-                <strong style="color:#ed4a6b!important;">${bestPlayer} (${points} PTS)</strong>
-            </div>
+    let scoresHTML = "";
+if (score1 !== "" && score2 !== "") {
+    scoresHTML = `<div class="scores">${score1} - ${score2}</div>`;
+}
+
+let bestPlayerHTML = "";
+if (bestPlayer && points) {
+    bestPlayerHTML = `
+        <div class="best-player">Best Player: 
+            <strong style="color:#ed4a6b!important;">${bestPlayer} (${points} PTS)</strong>
         </div>
     `;
+}
+
+let gameCard = `
+    <div class="game-card mb-5">
+        <div class="teams row">
+            <div class="team col-5">
+                <img style="border-color:#434343" class="team-logo" src="${logo1}" alt="${team1} Logo">
+                <p class="team-name">${team1}</p>
+            </div>
+            <span class="vs col-2">VS</span>
+            <div class="team col-5">
+                <img style="border-color:#434343" class="team-logo" src="${logo2}" alt="${team2} Logo">
+                <p class="team-name">${team2}</p>
+            </div>
+        </div>
+        ${scoresHTML}
+        ${bestPlayerHTML}
+    </div>
+`;
+
 
     games.push({ index: i, date: dateObj, gameDate, gameType, gameCard });
 }
@@ -125,8 +138,18 @@ async function fetchStandings() {
 
         container.innerHTML = ""; // Clear old standings
 
-        // Remove header row and sort by rank (assuming rank is in column 0)
-        let rows = values.slice(1).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+        // Remove header row and sort based on win percentage
+        let rows = values.slice(1).sort((a, b) => {
+            let winsA = parseInt(a[2]);
+            let lossesA = parseInt(a[3]);
+            let winsB = parseInt(b[2]);
+            let lossesB = parseInt(b[3]);
+
+            let pctA = winsA / (winsA + lossesA || 1); // Prevent division by 0
+            let pctB = winsB / (winsB + lossesB || 1);
+
+            return pctB - pctA; // Descending order
+        });
 
         let standingsTable = `
             <table class="standings-table">
@@ -140,12 +163,12 @@ async function fetchStandings() {
         `;
 
         for (let i = 0; i < rows.length; i++) {
-            let [rank, team, wins, losses, logo] = rows[i];
+            let [_, team, wins, losses, logo] = rows[i];
             logo = logo || "/images/472713882_122133885638496668_2194305492471167213_n.jpg";
 
             standingsTable += `
                 <tr>
-                    <td>${rank}</td>
+                    <td>${i + 1}</td> <!-- Recalculate rank based on sorting -->
                     <td style="min-width:50px"><img class="standings-logo" src="${logo}" alt="${team} Logo"></td>
                     <td>${team}</td>
                     <td>${wins}</td>
@@ -160,6 +183,7 @@ async function fetchStandings() {
         console.error("Error fetching standings:", error);
     }
 }
+
 
 
     fetchScores(); // Fetch game scores on page load
