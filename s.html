@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BBCebu Wallet</title>
+
+<!-- <link rel="stylesheet" href="style.css" /> -->
+<style>
+  .tabs-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
+  }
+
+  .card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .qr-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .qr-section svg {
+    max-width: 150px;
+    cursor: pointer;
+  }
+
+  .info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .info-item:last-child {
+    border-bottom: none;
+  }
+
+  .label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .value {
+    font-size: 16px;
+    color: #333;
+    font-weight: 500;
+  }
+
+  .php-value {
+    color: #ff7a18;
+    font-weight: bold;
+  }
+
+  .status-claimed {
+    color: #ff7a18;
+    font-weight: bold;
+  }
+
+  .no-owner {
+    color: #8a8a8a;
+    font-style: italic;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="tabs-container" id="tabs-container">
+  <!-- Cards will be generated here -->
+</div>
+
+<script>
+const numTabs = 7;
+const tabs = Array.from({ length: numTabs }, (_, i) => 
+  `btc${String(i + 1).padStart(2, '0')}`
+);
+
+// Fetch sheet data
+const sheetID = "1PfZSMz5ZJvidWmEPkXgZjGRxhwxoknZvX5mZ8V0bvGM";
+const apiKey = "AIzaSyDIUxdcZMFwg_RwRc-vF5C5uEAt_xn9gu0";
+
+async function fetchTabData(tabName) {
+  const range = `${tabName}!A2:G2`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${range}?key=${apiKey}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.values || !data.values[0]) {
+      return null;
+    }
+
+    const row = data.values[0];
+
+    return {
+      tabName: tabName,
+      svgCode: row[0] || '<svg fill="orange" width="180" height="180" viewBox="0 0 180 180"><rect x="10" y="10" width="40" height="40"/><rect x="130" y="10" width="40" height="40"/><rect x="10" y="130" width="40" height="40"/><rect x="70" y="70" width="15" height="15"/><rect x="100" y="70" width="15" height="15"/><rect x="70" y="100" width="15" height="15"/><rect x="100" y="100" width="15" height="15"/><rect x="50" y="50" width="10" height="10"/><rect x="120" y="120" width="10" height="10"/></svg>',
+      btc: parseFloat(row[1] || "0.00000001"),
+      php: parseFloat(row[2] || "100.0111"),
+      owner: row[3] || "",
+      status: row[5] || "No Owner",
+      dateClaimed: row[6] || ""
+    };
+  } catch (err) {
+    console.error(`Error fetching ${tabName}:`, err);
+    return null;
+  }
+}
+
+async function loadAllTabs() {
+  const container = document.getElementById("tabs-container");
+  container.innerHTML = ""; // Clear container
+
+  for (const tabName of tabs) {
+    const tabData = await fetchTabData(tabName);
+
+    if (!tabData) {
+      console.warn(`No data found for ${tabName}`);
+      continue;
+    }
+
+    // Create card element
+    const card = document.createElement("div");
+    card.className = "card";
+
+    // Card title
+    const cardTitle = document.createElement("div");
+    cardTitle.className = "card-title";
+    cardTitle.innerText = tabData.tabName.toUpperCase();
+
+    // QR section
+    const qrSection = document.createElement("div");
+    qrSection.className = "qr-section";
+    qrSection.innerHTML = tabData.svgCode;
+
+    // Add reload functionality to SVG
+    const svg = qrSection.querySelector("svg");
+    // if (svg) {
+    //   svg.style.cursor = "pointer";
+    //   svg.addEventListener("click", () => location.reload());
+    // }
+
+    // Info section
+    const infoSection = document.createElement("div");
+    infoSection.className = "info-section";
+
+    // BTC info
+    const btcItem = document.createElement("div");
+    btcItem.className = "info-item";
+    btcItem.innerHTML = `
+      <span class="label">BTC</span>
+      <span class="value">₿ ${tabData.btc.toFixed(8)}</span>
+    `;
+    infoSection.appendChild(btcItem);
+
+    // PHP info
+    const phpItem = document.createElement("div");
+    btcItem.className = "info-item";
+    phpItem.innerHTML = `
+      <span class="label">PHP</span>
+      <span class="value php-value">₱ ${tabData.php.toFixed(2)}</span>
+    `;
+    infoSection.appendChild(phpItem);
+
+    // Status and Owner info
+    if (tabData.status === "No Owner") {
+      const noOwnerItem = document.createElement("div");
+      noOwnerItem.className = "info-item";
+      noOwnerItem.innerHTML = `<span class="no-owner">No Owner yet</span>`;
+      infoSection.appendChild(noOwnerItem);
+    } else if (tabData.status === "Owned") {
+      const ownerItem = document.createElement("div");
+      ownerItem.className = "info-item";
+      ownerItem.innerHTML = `
+        <span class="label">Owner</span>
+        <span class="value">${tabData.owner}</span>
+      `;
+      infoSection.appendChild(ownerItem);
+    } else if (tabData.status === "Claimed") {
+      const ownerItem = document.createElement("div");
+      ownerItem.className = "info-item";
+      ownerItem.innerHTML = `
+        <span class="label">Owner</span>
+        <span class="value">${tabData.owner}</span>
+      `;
+      infoSection.appendChild(ownerItem);
+
+      const statusItem = document.createElement("div");
+      statusItem.className = "info-item";
+      statusItem.innerHTML = `
+        <span class="status-claimed">
+          STATUS: CLAIMED ${tabData.dateClaimed ? `• ${tabData.dateClaimed}` : ""}
+        </span>
+      `;
+      infoSection.appendChild(statusItem);
+    }
+
+    // Assemble card
+    const cardContent = document.createElement("div");
+    cardContent.className = "card-content";
+    cardContent.appendChild(qrSection);
+    cardContent.appendChild(infoSection);
+
+    card.appendChild(cardTitle);
+    card.appendChild(cardContent);
+
+    // Add card to container
+    container.appendChild(card);
+  }
+}
+
+// Load all tabs on page load
+loadAllTabs();
+</script>
+
+</body>
+</html>
